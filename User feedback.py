@@ -347,8 +347,9 @@ def flag_offensive(text):
 def generate_enhanced_wordcloud(text, colormap='plasma'):
     """Enhanced wordcloud with better styling"""
     fig, ax = plt.subplots(figsize=(12, 6))
-    fig.patch.set_facecolor('rgba(0,0,0,0)')
-    ax.set_facecolor('rgba(0,0,0,0)')
+    # Corrected lines: Use a tuple for the RGBA value
+    fig.patch.set_facecolor((0, 0, 0, 0)) 
+    ax.set_facecolor((0, 0, 0, 0))
     
     if text.strip():
         wordcloud = WordCloud(
@@ -989,3 +990,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
