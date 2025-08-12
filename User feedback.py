@@ -1,7 +1,12 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
+# --- Download NLTK Data ---
 import nltk
+nltk.download('stopwords')
+nltk.download('vader_lexicon')
+nltk.download('punkt')
+nltk.download('punkt_tab') # Add this line to fix the error
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
@@ -982,4 +987,5 @@ def main():
     """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
+
     main()
