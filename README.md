@@ -116,11 +116,7 @@ customer_id,feedback_text
 - **Confidence Filtering**: See only high-confidence classifications
 - **Export Options**: Download your analyzed data
 
-## 📊 Sample Screenshots
 
-*Upload your first screenshot here showing the main dashboard*
-
-*Add a second screenshot of the beautiful visualizations*
 
 ## 🤝 Contributing
 
@@ -196,13 +192,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Plotly** for stunning interactive visualizations
 - **The open-source community** for all the amazing libraries
 
-## 💬 Support
 
-Need help? Have questions? Here's how to reach us:
-
-- 📧 **Email**: your-email@example.com
-- 💬 **Issues**: [GitHub Issues](https://github.com/yourusername/feedback-analyzer/issues)
-- 📖 **Wiki**: [Project Wiki](https://github.com/yourusername/feedback-analyzer/wiki)
 
 ## 🎉 What's Next?
 
