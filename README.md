@@ -124,7 +124,7 @@ Experience the **MVP Website User Feedback Analyzer** live in action! Click the 
 
 **➡️ Direct Link: [https://python-feedback-analyzer.streamlit.app](https://python-feedback-analyzer.streamlit.app)**
 
-> **Note:** If the project is hosted on a temporary service like `ngrok`, this link may be inactive. To run your own instance, please follow the setup instructions in this README.
+> **Note:** If the project is hosted on a temporary service like `streamlit`, this link may be inactive. To run your own instance, please follow the setup instructions in this README.
 
 ## 🤝 Contributing
 
