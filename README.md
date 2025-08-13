@@ -116,7 +116,15 @@ customer_id,feedback_text
 - **Confidence Filtering**: See only high-confidence classifications
 - **Export Options**: Download your analyzed data
 
+## 🚀 Live Demo
 
+Experience the **MVP Website User Feedback Analyzer** live in action! Click the link below to access the interactive web application.
+
+[![Open Live App](https://img.shields.io/badge/Live%20Demo-%F0%9F%9A%80-brightgreen?style=for-the-badge)]([https://python-feedback-analyzer.streamlit.app])
+
+**➡️ Direct Link: [https://python-feedback-analyzer.streamlit.app](https://python-feedback-analyzer.streamlit.app)**
+
+> **Note:** If the project is hosted on a temporary service like `ngrok`, this link may be inactive. To run your own instance, please follow the setup instructions in this README.
 
 ## 🤝 Contributing
 
