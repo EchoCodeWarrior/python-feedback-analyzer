@@ -2,30 +2,24 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import nltk
-import time
-import base64
-import re
-from collections import Counter
-
+# NLTK downloads are still needed for text cleaning (word_tokenize)
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('punkt_tab')
 # --- NEW: Import TextBlob for sentiment analysis ---
 from textblob import TextBlob
-
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+# NLTK's VADER is no longer used for sentiment, but we can leave the import
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
-
-# --- FINAL FIX: Correctly handle NLTK download errors ---
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords')
+from collections import Counter
+import re
+import base64
+import time
 
 
 # --- Enhanced Config ---
@@ -583,3 +577,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
