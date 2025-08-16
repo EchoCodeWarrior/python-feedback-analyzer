@@ -322,7 +322,6 @@ def search_feedback(query_term):
     conn.close()
     return df
 
-# Initialize NLTK components for text cleaning
 try:
     stop_words = set(stopwords.words('english'))
 except LookupError:
@@ -408,9 +407,8 @@ def create_enhanced_bar_chart(top_words_df):
     fig.update_layout(title={'text': 'Top 10 Most Common Words', 'x': 0.5, 'xanchor': 'center', 'font': {'size': 20, 'color': 'white'}}, xaxis_title='Frequency', yaxis_title='Words', yaxis={'categoryorder': 'total ascending'}, font=dict(color='white'), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=500)
     return fig
 
-# --- Enhanced Main App ---
 def main():
-    st.set_page_config(page_title="Advanced Feedback Analyzer", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(page_title="🚀 Advanced Feedback Analyzer", layout="wide", initial_sidebar_state="expanded", page_icon="🚀")
     st.markdown(ENHANCED_CSS, unsafe_allow_html=True)
     init_db()
 
@@ -557,6 +555,119 @@ def main():
                         if not related_comments.empty:
                             st.markdown(f"**Found {len(related_comments)} comments containing '{selected_word}':**")
                             st.dataframe(related_comments[['Feedback_ID', 'Feedback_Text', 'Sentiment', 'Confidence_Score']], use_container_width=True, height=300)
+
+            with tab2:
+                st.markdown("## 📄 Data Explorer")
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    sentiment_filter = st.multiselect("🎭 Filter by Sentiment:", options=feedback_df['Sentiment'].unique(), default=list(feedback_df['Sentiment'].unique()))
+                with col2:
+                    show_offensive = st.checkbox("🚨 Show only flagged content")
+                with col3:
+                    min_confidence = st.slider("🎯 Minimum Confidence", 0.0, 1.0, 0.0, 0.1)
+                
+                filtered_df = feedback_df[(feedback_df['Sentiment'].isin(sentiment_filter)) & (feedback_df['Confidence_Score'] >= min_confidence)]
+                if show_offensive:
+                    filtered_df = filtered_df[filtered_df['Is_Offensive'] == True]
+                
+                st.markdown(f"### 📊 Showing {len(filtered_df):,} of {len(feedback_df):,} feedback entries")
+                if not filtered_df.empty:
+                    st.dataframe(filtered_df[['Feedback_ID', 'Feedback_Text', 'Sentiment', 'Confidence_Score', 'Is_Offensive']], use_container_width=True, height=400)
+                    st.markdown(create_enhanced_download_link(filtered_df), unsafe_allow_html=True)
+                else:
+                    st.info("🔍 No data matches your current filters.")
+
+            with tab3:
+                st.markdown("## 💡 AI-Powered Insights")
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("### 📈 Key Statistics")
+                    total_feedback = len(feedback_df)
+                    offensive_count = feedback_df['Is_Offensive'].sum()
+                    avg_confidence = feedback_df['Confidence_Score'].mean()
+                    dominant_sentiment = sentiment_counts.idxmax() if not sentiment_counts.empty else "N/A"
+                    st.markdown(f'''
+                    <div class="info-box">
+                    <h4>📊 Summary Report</h4>
+                    <ul>
+                        <li><strong>Total Feedback:</strong> {total_feedback:,} entries</li>
+                        <li><strong>Dominant Sentiment:</strong> {dominant_sentiment}</li>
+                        <li><strong>Average Confidence:</strong> {avg_confidence:.2f}/1.0</li>
+                        <li><strong>Flagged Content:</strong> {offensive_count} ({(offensive_count/total_feedback*100):.1f}%)</li>
+                    </ul>
+                    </div>
+                    ''', unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown("### 🎯 Recommendations")
+                    recommendations = []
+                    # --- FINAL FIX: Use correct sentiment labels ---
+                    if sentiment_counts.get("Negative", 0) > sentiment_counts.get("Positive", 0):
+                        recommendations.append("🔴 **Priority:** Address negative feedback - it exceeds positive feedback")
+                    if offensive_count > 0:
+                        recommendations.append(f"⚠️ **Alert:** {offensive_count} potentially offensive comments need review")
+                    if avg_confidence < 0.5:
+                        recommendations.append("📝 **Note:** Low confidence scores suggest mixed sentiment - manual review recommended")
+                    if sentiment_counts.get("Positive", 0) > total_feedback * 0.6:
+                        recommendations.append("🎉 **Great news:** Strong positive sentiment detected!")
+                    if not recommendations:
+                        recommendations.append("✅ **All good:** Balanced feedback distribution detected")
+                    for i, rec in enumerate(recommendations, 1):
+                        st.markdown(f"{i}. {rec}")
+                
+                st.markdown("### 📈 Sentiment Breakdown")
+                sentiment_details = []
+                for sentiment in feedback_df['Sentiment'].unique():
+                    subset = feedback_df[feedback_df['Sentiment'] == sentiment]
+                    avg_conf = subset['Confidence_Score'].mean()
+                    count = len(subset)
+                    sentiment_details.append({'Sentiment': sentiment, 'Count': count, 'Percentage': f"{(count/total_feedback)*100:.1f}%", 'Avg Confidence': f"{avg_conf:.2f}", 'Top Words': ', '.join([word for word, _ in Counter(' '.join(subset['Cleaned_Text'])).most_common(3)])})
+                sentiment_detail_df = pd.DataFrame(sentiment_details)
+                st.dataframe(sentiment_detail_df, use_container_width=True)
+
+            with tab4:
+                st.markdown("## 🎯 Advanced Analytics")
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("### 📊 Confidence Distribution")
+                    fig_conf = px.histogram(feedback_df, x='Confidence_Score', nbins=20, title='Sentiment Confidence Distribution', color_discrete_sequence=['#667eea'])
+                    fig_conf.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='white'), title_font=dict(color='white', size=16))
+                    st.plotly_chart(fig_conf, use_container_width=True)
+                with col2:
+                    st.markdown("### 🔍 Text Length Analysis")
+                    feedback_df['Text_Length'] = feedback_df['Feedback_Text'].str.len()
+                    # --- FINAL FIX: Use correct sentiment labels ---
+                    fig_length = px.box(feedback_df, y='Text_Length', color='Sentiment', title='Text Length by Sentiment', color_discrete_map={"Positive": "#2ecc71", "Negative": "#e74c3c", "Neutral": "#95a5a6"})
+                    fig_length.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='white'), title_font=dict(color='white', size=16))
+                    st.plotly_chart(fig_length, use_container_width=True)
+                
+                st.markdown("### 🔤 Advanced Word Analysis")
+                # --- FINAL FIX: Use correct sentiment labels ---
+                tab_pos, tab_neg, tab_neu = st.tabs(["Positive Words", "Negative Words", "Neutral Words"])
+                with tab_pos:
+                    positive_df = feedback_df[feedback_df['Sentiment'] == 'Positive']
+                    if not positive_df.empty:
+                        pos_words = ' '.join(positive_df['Cleaned_Text']).split()
+                        pos_top = pd.DataFrame(Counter(pos_words).most_common(15), columns=['Word', 'Frequency'])
+                        fig_pos = px.treemap(pos_top, path=['Word'], values='Frequency', title='Most Common Positive Words', color='Frequency', color_continuous_scale='Greens')
+                        fig_pos.update_layout(paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'), title_font=dict(color='white', size=16))
+                        st.plotly_chart(fig_pos, use_container_width=True)
+                with tab_neg:
+                    negative_df = feedback_df[feedback_df['Sentiment'] == 'Negative']
+                    if not negative_df.empty:
+                        neg_words = ' '.join(negative_df['Cleaned_Text']).split()
+                        neg_top = pd.DataFrame(Counter(neg_words).most_common(15), columns=['Word', 'Frequency'])
+                        fig_neg = px.treemap(neg_top, path=['Word'], values='Frequency', title='Most Common Negative Words', color='Frequency', color_continuous_scale='Reds')
+                        fig_neg.update_layout(paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'), title_font=dict(color='white', size=16))
+                        st.plotly_chart(fig_neg, use_container_width=True)
+                with tab_neu:
+                    neutral_df = feedback_df[feedback_df['Sentiment'] == 'Neutral']
+                    if not neutral_df.empty:
+                        neu_words = ' '.join(neutral_df['Cleaned_Text']).split()
+                        neu_top = pd.DataFrame(Counter(neu_words).most_common(15), columns=['Word', 'Frequency'])
+                        fig_neu = px.treemap(neu_top, path=['Word'], values='Frequency', title='Most Common Neutral Words', color='Frequency', color_continuous_scale='Blues')
+                        fig_neu.update_layout(paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'), title_font=dict(color='white', size=16))
+                        st.plotly_chart(fig_neu, use_container_width=True)
         except Exception as e:
             st.error(f"🚨 An error occurred during analysis: {e}")
     else:
@@ -577,5 +688,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
