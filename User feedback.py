@@ -17,14 +17,14 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 
-# --- Download necessary NLTK data ---
+# --- FINAL FIX: Correctly handle NLTK download errors ---
 try:
     nltk.data.find('tokenizers/punkt')
-except nltk.downloader.DownloadError:
+except LookupError:
     nltk.download('punkt')
 try:
     nltk.data.find('corpora/stopwords')
-except nltk.downloader.DownloadError:
+except LookupError:
     nltk.download('stopwords')
 
 
@@ -345,7 +345,6 @@ def clean_text(text):
         st.error("NLTK 'punkt' model not found. Please ensure you have an internet connection.")
         return ""
 
-# --- MODIFIED: get_sentiment function now uses TextBlob ---
 def get_sentiment(text):
     analysis = TextBlob(str(text))
     if analysis.sentiment.polarity > 0:
