@@ -2,24 +2,31 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import nltk
-# NLTK downloads are still needed for text cleaning (word_tokenize)
-nltk.download('stopwords')
-nltk.download('punkt')
-nltk.download('punkt_tab')
+import time
+import base64
+import re
+from collections import Counter
+
 # --- NEW: Import TextBlob for sentiment analysis ---
 from textblob import TextBlob
+
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-# NLTK's VADER is no longer used for sentiment, but we can leave the import
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
-from collections import Counter
-import re
-import base64
-import time
+
+# --- Download necessary NLTK data ---
+try:
+    nltk.data.find('tokenizers/punkt')
+except nltk.downloader.DownloadError:
+    nltk.download('punkt')
+try:
+    nltk.data.find('corpora/stopwords')
+except nltk.downloader.DownloadError:
+    nltk.download('stopwords')
+
 
 # --- Enhanced Config ---
 DB_NAME = "feedback.db"
@@ -324,8 +331,9 @@ def search_feedback(query_term):
 # Initialize NLTK components for text cleaning
 try:
     stop_words = set(stopwords.words('english'))
-except:
+except LookupError:
     st.error("NLTK 'stopwords' not found. Please ensure you have an internet connection.")
+    stop_words = set()
 
 def clean_text(text):
     text = str(text).lower()
@@ -333,15 +341,12 @@ def clean_text(text):
     try:
         tokens = word_tokenize(text)
         return " ".join([word for word in tokens if word not in stop_words and word.isalpha()])
-    except: # Handles cases where punkt may not be downloaded initially
+    except LookupError:
         st.error("NLTK 'punkt' model not found. Please ensure you have an internet connection.")
         return ""
 
 # --- MODIFIED: get_sentiment function now uses TextBlob ---
 def get_sentiment(text):
-    """
-    Performs sentiment analysis using TextBlob to match the desired output.
-    """
     analysis = TextBlob(str(text))
     if analysis.sentiment.polarity > 0:
         return 'Positive'
@@ -355,7 +360,7 @@ def flag_offensive(text):
 
 def generate_enhanced_wordcloud(text, colormap='plasma'):
     fig, ax = plt.subplots(figsize=(12, 6))
-    fig.patch.set_facecolor((0, 0, 0, 0)) 
+    fig.patch.set_facecolor((0, 0, 0, 0))
     ax.set_facecolor((0, 0, 0, 0))
     if text.strip():
         wordcloud = WordCloud(width=1000, height=500, background_color=None, mode='RGBA', colormap=colormap, max_words=100, relative_scaling=0.5, font_path=None, max_font_size=60).generate(text)
@@ -382,7 +387,6 @@ def create_enhanced_download_link(df, filename="processed_feedback.csv"):
 
 def create_enhanced_metrics(sentiment_counts):
     col1, col2, col3 = st.columns(3)
-    # --- MODIFIED: Use new sentiment labels without emojis ---
     metrics = [
         ("Positive Feedback", sentiment_counts.get("Positive", 0), "💚"),
         ("Neutral Feedback", sentiment_counts.get("Neutral", 0), "💙"),
@@ -399,10 +403,8 @@ def create_enhanced_metrics(sentiment_counts):
 
 def create_enhanced_pie_chart(sentiment_counts):
     if not sentiment_counts.empty:
-        # --- MODIFIED: Define colors based on new sentiment labels ---
         color_map = {'Positive': '#2ecc71', 'Neutral': '#95a5a6', 'Negative': '#e74c3c'}
         colors = [color_map.get(label, '#3498db') for label in sentiment_counts.index]
-        
         fig = go.Figure(data=[go.Pie(labels=sentiment_counts.index, values=sentiment_counts.values, hole=0.4, marker_colors=colors, textinfo='label+percent', textfont_size=14, marker=dict(line=dict(color='#FFFFFF', width=3)))])
         fig.update_layout(title={'text': "Sentiment Distribution", 'x': 0.5, 'xanchor': 'center', 'font': {'size': 20, 'color': 'white'}}, font=dict(color='white', size=12), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=500)
         return fig
@@ -425,7 +427,7 @@ def main():
         uploaded_file = st.file_uploader("Upload your feedback CSV file", type=["csv"], help="Upload a CSV file containing feedback data")
         
         if uploaded_file is not None:
-            if "df_uploaded" not in st.session_state or st.session_state.file_name != uploaded_file.name:
+            if "df_uploaded" not in st.session_state or st.session_state.get('file_name') != uploaded_file.name:
                 try:
                     st.session_state.df_uploaded = pd.read_csv(uploaded_file)
                     st.session_state.file_name = uploaded_file.name
@@ -435,7 +437,6 @@ def main():
         
         if "df_uploaded" in st.session_state:
             df = st.session_state.df_uploaded
-            
             st.markdown("---")
             st.markdown("### 🔗 Column Mapping")
             st.markdown('<div class="info-box">Map your CSV columns to the required fields</div>', unsafe_allow_html=True)
@@ -451,35 +452,27 @@ def main():
             text_col = st.selectbox("📝 Text Column", options, index=default_text_col_index, help="Select the column containing feedback text")
             
             if st.button("🚀 Process & Analyze", type="primary"):
-                # --- FINAL FIX PART 1: Validate column data type ---
                 if pd.api.types.is_numeric_dtype(df[text_col]) and not pd.api.types.is_string_dtype(df[text_col]):
                     st.error(f"❌ Validation Error: The selected 'Text Column' ('{text_col}') appears to contain only numbers. Please select the correct column that contains the feedback text.")
                 else:
                     try:
                         with st.spinner('Processing your data...'):
-                            # --- FINAL FIX PART 2: Handle missing values and ensure string type ---
                             temp_df = df[[id_col, text_col]].copy()
                             temp_df[text_col] = temp_df[text_col].fillna('').astype(str)
-                            
-                            processed_df = pd.DataFrame({
-                                'Feedback_ID': temp_df[id_col].astype(str), 
-                                'Feedback_Text': temp_df[text_col]
-                            })
+                            processed_df = pd.DataFrame({'Feedback_ID': temp_df[id_col].astype(str), 'Feedback_Text': temp_df[text_col]})
                             
                             insert_feedback(processed_df)
                             
-                            del st.session_state.df_uploaded
-                            del st.session_state.file_name
+                            if "df_uploaded" in st.session_state: del st.session_state.df_uploaded
+                            if "file_name" in st.session_state: del st.session_state.file_name
                             
-                            time.sleep(1)
                             st.success(f"🎉 Successfully processed {len(processed_df):,} feedback entries!")
                             st.balloons()
-                            time.sleep(2)
+                            time.sleep(1)
                             st.rerun()
                             
                     except Exception as e:
-                        st.error("❌ Processing failed:")
-                        st.exception(e)
+                        st.error(f"❌ Processing failed: {e}")
         
         st.markdown("---")
         st.markdown("### 🔍 Search & Filter")
@@ -510,19 +503,16 @@ def main():
                 feedback_df['Cleaned_Text'] = feedback_df['Feedback_Text'].apply(clean_text)
                 feedback_df['Sentiment'] = feedback_df['Feedback_Text'].apply(get_sentiment)
                 feedback_df['Is_Offensive'] = feedback_df['Feedback_Text'].apply(flag_offensive)
-                # Use TextBlob's polarity for confidence
                 feedback_df['Confidence_Score'] = feedback_df['Feedback_Text'].apply(lambda x: abs(TextBlob(str(x)).sentiment.polarity))
-                time.sleep(1)
 
             st.markdown("## 📈 Sentiment Overview")
             sentiment_counts = feedback_df['Sentiment'].value_counts()
             
-            # --- DISPLAY FINAL PERCENTAGES ---
             st.markdown("### Final Result:")
             total_reviews = len(feedback_df)
-            positive_pct = (sentiment_counts.get("Positive", 0) / total_reviews) * 100
-            negative_pct = (sentiment_counts.get("Negative", 0) / total_reviews) * 100
-            neutral_pct = (sentiment_counts.get("Neutral", 0) / total_reviews) * 100
+            positive_pct = (sentiment_counts.get("Positive", 0) / total_reviews) * 100 if total_reviews > 0 else 0
+            negative_pct = (sentiment_counts.get("Negative", 0) / total_reviews) * 100 if total_reviews > 0 else 0
+            neutral_pct = (sentiment_counts.get("Neutral", 0) / total_reviews) * 100 if total_reviews > 0 else 0
             st.markdown(f"**Positive: {positive_pct:.1f}%**")
             st.markdown(f"**Negative: {negative_pct:.1f}%**")
             st.markdown(f"**Neutral: {neutral_pct:.1f}%**")
@@ -548,7 +538,6 @@ def main():
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown("#### 💚 Positive Vibes")
-                    # --- MODIFIED: Use new sentiment labels ---
                     positive_text = " ".join(feedback_df[feedback_df['Sentiment'] == 'Positive']['Cleaned_Text'])
                     if positive_text.strip():
                         st.pyplot(generate_enhanced_wordcloud(positive_text, colormap='Greens'), use_container_width=True)
@@ -556,7 +545,6 @@ def main():
                         st.info("🤔 No positive feedback available.")
                 with col2:
                     st.markdown("#### ❤️ Areas for Improvement")
-                    # --- MODIFIED: Use new sentiment labels ---
                     negative_text = " ".join(feedback_df[feedback_df['Sentiment'] == 'Negative']['Cleaned_Text'])
                     if negative_text.strip():
                         st.pyplot(generate_enhanced_wordcloud(negative_text, colormap='Reds'), use_container_width=True)
@@ -576,15 +564,9 @@ def main():
                         if not related_comments.empty:
                             st.markdown(f"**Found {len(related_comments)} comments containing '{selected_word}':**")
                             st.dataframe(related_comments[['Feedback_ID', 'Feedback_Text', 'Sentiment', 'Confidence_Score']], use_container_width=True, height=300)
-
-            # (The rest of the tabs are shortened for brevity but would need similar label updates if used)
-            # ... and so on for the other tabs ...
-
         except Exception as e:
-            st.error("🚨 An error occurred during analysis:")
-            st.exception(e)
+            st.error(f"🚨 An error occurred during analysis: {e}")
     else:
-        # Display initial empty state
         st.markdown("""
         <div style="text-align: center; padding: 60px 20px; background: rgba(255,255,255,0.1); border-radius: 20px; backdrop-filter: blur(20px); margin: 40px 0;">
             <h2 style="color: white; font-size: 2.5rem; margin-bottom: 20px;">🚀 Ready to Analyze Feedback?</h2>
@@ -592,7 +574,6 @@ def main():
         </div>
         """, unsafe_allow_html=True)
 
-    # Footer
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; padding: 20px; color: rgba(255,255,255,0.6);">
