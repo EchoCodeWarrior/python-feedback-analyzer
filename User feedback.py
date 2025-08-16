@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
-# --- Download NLTK Data ---
 import nltk
 nltk.download('stopwords')
 nltk.download('vader_lexicon')
@@ -381,8 +380,8 @@ def create_enhanced_download_link(df, filename="processed_feedback.csv"):
     <div style="text-align: center; margin: 20px 0;">
         <a href="data:file/csv;base64,{b64}" download="{filename}" 
            style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #667eea, #764ba2); 
-                  color: white; text-decoration: none; border-radius: 10px; font-weight: 600;
-                  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease;">
+                   color: white; text-decoration: none; border-radius: 10px; font-weight: 600;
+                   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease;">
             📥 Download Processed Data
         </a>
     </div>
@@ -514,8 +513,22 @@ def main():
             st.markdown("### 🔗 Column Mapping")
             st.markdown('<div class="info-box">Map your CSV columns to the required fields</div>', unsafe_allow_html=True)
             
-            id_col = st.selectbox("🆔 ID Column", df.columns, help="Select the column containing unique identifiers")
-            text_col = st.selectbox("📝 Text Column", df.columns, help="Select the column containing feedback text")
+            # --- START OF CODE FIX ---
+            # Intelligent default selection for ID and text columns
+            options = list(df.columns)
+            default_id_col_index = 0
+            default_text_col_index = 0
+
+            for i, col in enumerate(options):
+                col_lower = col.lower()
+                if 'id' in col_lower or 'identifier' in col_lower:
+                    default_id_col_index = i
+                if ('text' in col_lower or 'review' in col_lower or 'comment' in col_lower) and 'id' not in col_lower:
+                    default_text_col_index = i
+
+            id_col = st.selectbox("🆔 ID Column", options, index=default_id_col_index, help="Select the column containing unique identifiers")
+            text_col = st.selectbox("📝 Text Column", options, index=default_text_col_index, help="Select the column containing feedback text")
+            # --- END OF CODE FIX ---
             
             if st.button("🚀 Process & Analyze", type="primary"):
                 try:
@@ -530,7 +543,7 @@ def main():
                         del st.session_state.df_uploaded
                         del st.session_state.file_name
                         
-                        time.sleep(1)  # Brief pause for effect
+                        time.sleep(1) # Brief pause for effect
                         st.success(f"🎉 Successfully processed {len(processed_df):,} feedback entries!")
                         st.balloons()
                         time.sleep(2)
@@ -587,7 +600,7 @@ def main():
                     lambda x: abs(sentiment_analyzer.polarity_scores(str(x))['compound'])
                 )
                 
-                time.sleep(1)  # Brief pause for effect
+                time.sleep(1) # Brief pause for effect
 
             # Enhanced Sentiment Overview
             st.markdown("## 📈 Sentiment Overview")
@@ -983,11 +996,9 @@ def main():
     st.markdown("""
     <div style="text-align: center; padding: 20px; color: rgba(255,255,255,0.6);">
         <p>🚀 Enhanced Feedback Analyzer | Built with Streamlit & AI | 
-        <span style="color: #ff6b6b;">❤️</span> Made with passion for data insights</p>
+        <span style="color: #ff6b6b;">❤️</span> Made By Atharva Borhade</p>
     </div>
     """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
-
     main()
-
