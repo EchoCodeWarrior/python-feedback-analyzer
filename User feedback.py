@@ -408,7 +408,7 @@ def create_enhanced_bar_chart(top_words_df):
     return fig
 
 def main():
-    st.set_page_config(page_title="🚀 Advanced Feedback Analyzer", layout="wide", initial_sidebar_state="expanded", page_icon="🚀")
+    st.set_page_config(page_title="Advanced Feedback Analyzer", layout="wide", initial_sidebar_state="expanded", page_icon="</>")
     st.markdown(ENHANCED_CSS, unsafe_allow_html=True)
     init_db()
 
@@ -483,7 +483,7 @@ def main():
         
         st.markdown('<div class="warning-box">⚠️ <strong>Disclaimer:</strong> Analysis results are automated and may require human review for accuracy.</div>', unsafe_allow_html=True)
 
-    st.markdown("# 🚀 Advanced Feedback Analyzer")
+    st.markdown("# Advanced Feedback Analyzer")
     st.markdown("### Transform customer feedback into actionable insights with AI-powered sentiment analysis")
 
     feedback_df = search_feedback(search_term) if search_term else fetch_all_feedback()
@@ -688,3 +688,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
