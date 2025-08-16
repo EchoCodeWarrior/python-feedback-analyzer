@@ -410,7 +410,7 @@ def create_enhanced_bar_chart(top_words_df):
 
 # --- Enhanced Main App ---
 def main():
-    st.set_page_config(page_title="🚀 Advanced Feedback Analyzer", layout="wide", initial_sidebar_state="expanded", page_icon="🚀")
+    st.set_page_config(page_title="Advanced Feedback Analyzer", layout="wide", initial_sidebar_state="expanded")
     st.markdown(ENHANCED_CSS, unsafe_allow_html=True)
     init_db()
 
@@ -577,4 +577,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
