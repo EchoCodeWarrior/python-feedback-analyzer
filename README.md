@@ -1,5 +1,4 @@
-# python-feedback-analyzer
-# 🚀 Advanced Feedback Analyzer
+# Advanced Feedback Analyzer
 
 > Transform your customer feedback into actionable insights with AI-powered sentiment analysis!
 
